@@ -1,0 +1,173 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+struct Student {
+    char name[50];
+    char usn[20];
+    float marks;
+    char grade;
+};
+
+void addStudent();
+void displayStudents();
+void searchStudent();
+void deleteStudent();
+
+int main() {
+    int choice;
+    while (1) {
+        printf("\n===== STUDENT MANAGEMENT SYSTEM =====\n");
+        printf("1. Add Student Record\n");
+        printf("2. Display All Students\n");
+        printf("3. Search Student by USN\n");
+        printf("4. Delete Student Record\n");
+        printf("5. Exit\n");
+        printf("Enter your choice: ");
+        scanf("%d", &choice);
+        getchar(); // clear newline from buffer
+
+        switch (choice) {
+            case 1:
+                addStudent();
+                break;
+            case 2:
+                displayStudents();
+                break;
+            case 3:
+                searchStudent();
+                break;
+            case 4:
+                deleteStudent();
+                break;
+            case 5:
+                printf("Exiting...\n");
+                exit(0);
+            default:
+                printf("Invalid choice! Try again.\n");
+        }
+    }
+    return 0;
+}
+
+void addStudent() {
+    struct Student s;
+    FILE *fp;
+
+    fp = fopen("students.txt", "a");
+    if (fp == NULL) {
+        printf("Error opening file!\n");
+        return;
+    }
+
+    printf("Enter student name: ");
+    fgets(s.name, sizeof(s.name), stdin);
+    s.name[strcspn(s.name, "\n")] = 0; // remove newline
+
+    printf("Enter USN: ");
+    scanf("%s", s.usn);
+
+    printf("Enter marks: ");
+    scanf("%f", &s.marks);
+
+    if (s.marks >= 85)
+        s.grade = 'A';
+    else if (s.marks >= 70)
+        s.grade = 'B';
+    else if (s.marks >= 50)
+        s.grade = 'C';
+    else
+        s.grade = 'F';
+
+    fprintf(fp, "%s %s %.2f %c\n", s.name, s.usn, s.marks, s.grade);
+    fclose(fp);
+
+    printf("✅ Student record added successfully!\n");
+}
+
+void displayStudents() {
+    struct Student s;
+    FILE *fp;
+
+    fp = fopen("students.txt", "r");
+    if (fp == NULL) {
+        printf("No records found!\n");
+        return;
+    }
+
+    printf("\n----- All Student Records -----\n");
+    printf("%-20s %-15s %-10s %-5s\n", "Name", "USN", "Marks", "Grade");
+    printf("-----------------------------------------------\n");
+
+    while (fscanf(fp, "%s %s %f %c", s.name, s.usn, &s.marks, &s.grade) != EOF) {
+        printf("%-20s %-15s %-10.2f %-5c\n", s.name, s.usn, s.marks, s.grade);
+    }
+
+    fclose(fp);
+}
+
+void searchStudent() {
+    struct Student s;
+    FILE *fp;
+    char searchUSN[20];
+    int found = 0;
+
+    fp = fopen("students.txt", "r");
+    if (fp == NULL) {
+        printf("No records found!\n");
+        return;
+    }
+
+    printf("Enter USN to search: ");
+    scanf("%s", searchUSN);
+
+    while (fscanf(fp, "%s %s %f %c", s.name, s.usn, &s.marks, &s.grade) != EOF) {
+        if (strcmp(s.usn, searchUSN) == 0) {
+            printf("\nRecord Found!\n");
+            printf("Name: %s\nUSN: %s\nMarks: %.2f\nGrade: %c\n", s.name, s.usn, s.marks, s.grade);
+            found = 1;
+            break;
+        }
+    }
+
+    if (!found)
+        printf("❌ No student found with USN %s\n", searchUSN);
+
+    fclose(fp);
+}
+
+void deleteStudent() {
+    struct Student s;
+    FILE *fp, *temp;
+    char deleteUSN[20];
+    int found = 0;
+
+    fp = fopen("students.txt", "r");
+    if (fp == NULL) {
+        printf("No records found!\n");
+        return;
+    }
+
+    temp = fopen("temp.txt", "w");
+
+    printf("Enter USN to delete: ");
+    scanf("%s", deleteUSN);
+
+    while (fscanf(fp, "%s %s %f %c", s.name, s.usn, &s.marks, &s.grade) != EOF) {
+        if (strcmp(s.usn, deleteUSN) != 0)
+            fprintf(temp, "%s %s %.2f %c\n", s.name, s.usn, s.marks, s.grade);
+        else
+            found = 1;
+    }
+
+    fclose(fp);
+    fclose(temp);
+
+    remove("students.txt");
+    rename("temp.txt", "students.txt");
+
+    if (found)
+        printf("✅ Record deleted successfully!\n");
+    else
+        printf("❌ USN not found!\n");
+}
